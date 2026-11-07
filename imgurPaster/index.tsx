@@ -16,7 +16,7 @@ import definePlugin, { OptionType, PluginNative } from "@utils/types";
 import { Guild } from "@vencord/discord-types";
 import { Menu, SelectedChannelStore, showToast, useEffect, useState } from "@webpack/common";
 
-import { formatLink, GuildConfig, GuildConfigs, ImgurImage, LinkFormat, parseUploadResponse, resolveFormat, shouldUpload, updateGuildConfig } from "./utils";
+import { formatLink, GuildConfig, GuildConfigs, ImgurImage, LinkFormat, parseUploadResponse, resolveClientId, resolveFormat, shouldUpload, updateGuildConfig } from "./utils";
 
 const Native = VencordNative.pluginHelpers.ImgurPaster as PluginNative<typeof import("./native")>;
 
@@ -29,7 +29,7 @@ interface UploadRecord extends ImgurImage {
 const settings = definePluginSettings({
     clientId: {
         type: OptionType.STRING,
-        description: "Your imgur API Client ID (register an app at https://api.imgur.com/oauth2/addclient)",
+        description: "imgur API Client ID. Leave empty to use the one imgur.com's own uploader uses (imgur no longer lets you register new apps)",
         default: ""
     },
     defaultFormat: {
@@ -56,7 +56,7 @@ function toast(text: string, variant: "default" | "success" | "critical" = "defa
 
 /** Deletes the image from imgur and forgets it. Returns the HTTP status on failure, or null on success. */
 async function removeUpload(upload: UploadRecord): Promise<number | null> {
-    const res = await Native.deleteImage(settings.store.clientId.trim(), upload.deletehash);
+    const res = await Native.deleteImage(resolveClientId(settings.store.clientId), upload.deletehash);
     // 404 means it is already gone, so forget it either way
     if (res.status !== 200 && res.status !== 404) return res.status;
     await DataStore.update<UploadRecord[]>(HISTORY_KEY, list => (list ?? []).filter(u => u.deletehash !== upload.deletehash));
@@ -143,12 +143,7 @@ function UploadHistory() {
 }
 
 async function upload(files: File[], channelId: string, guildId: string | null | undefined) {
-    const clientId = settings.store.clientId.trim();
-    if (!clientId) {
-        toast("Imgur Paster: set your imgur Client ID in the plugin settings first", "critical");
-        return;
-    }
-
+    const clientId = resolveClientId(settings.store.clientId);
     toast(files.length > 1 ? `Uploading ${files.length} images to imgur...` : "Uploading to imgur...");
 
     try {

@@ -14,15 +14,13 @@ If you switch channels while an upload is running, the link is copied to your cl
 
 ## Setup
 
-### 1. Get an imgur Client ID
+### imgur Client ID
 
-1. Sign in to imgur and open <https://api.imgur.com/oauth2/addclient>.
-2. Choose **OAuth 2 authorization without a callback URL** and fill in the rest however you like.
-3. Copy the **Client ID**. You don't need the client secret.
+imgur no longer accepts new API app registrations. So when the plugin's **Client Id** setting is empty, it uses the Client ID that imgur.com's own web uploader uses. That needs no setup, but it's imgur's credential rather than one issued to you: imgur can change or block it at any time, and using it is a gray area under their terms. If you already have a registered imgur app, paste its Client ID into the setting and it takes precedence.
 
-Anonymous uploads made with your Client ID are public to anyone who has the link.
+Either way, uploads are anonymous: they're public to anyone who has the link, and you can only delete them through the plugin's upload list.
 
-### 2. Install the plugin
+### Install the plugin
 
 Third-party plugins need a Vencord build from source. See [Installing custom plugins](https://docs.vencord.dev/installing/custom-plugins/).
 
@@ -40,7 +38,7 @@ pnpm build
 pnpm inject   # first time only, points Discord at your build
 ```
 
-Restart Discord, enable **ImgurPaster** under Vencord → Plugins, and paste your Client ID into its settings.
+Restart Discord and enable **ImgurPaster** under Vencord → Plugins.
 
 The plugin uses a `native.ts` helper to talk to imgur from Discord's main process, so it works in the desktop app (Discord + Vencord, or Vesktop). It doesn't work in the browser extension.
 

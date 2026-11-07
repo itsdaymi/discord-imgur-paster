@@ -1,9 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { formatLink, parseUploadResponse, resolveFormat, shouldUpload, updateGuildConfig } from "../imgurPaster/utils.ts";
+import { formatLink, IMGUR_WEB_CLIENT_ID, parseUploadResponse, resolveClientId, resolveFormat, shouldUpload, updateGuildConfig } from "../imgurPaster/utils.ts";
 
 const image = { id: "aBc123", link: "https://i.imgur.com/aBc123.png", deletehash: "del123" };
+
+test("resolveClientId prefers the user's Client ID, else imgur's web uploader ID", () => {
+    assert.equal(resolveClientId(" mine "), "mine");
+    assert.equal(resolveClientId(""), IMGUR_WEB_CLIENT_ID);
+    assert.equal(resolveClientId("   "), IMGUR_WEB_CLIENT_ID);
+});
 
 test("formatLink gives the page or the direct link", () => {
     assert.equal(formatLink(image, "page"), "https://imgur.com/aBc123");

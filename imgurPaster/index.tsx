@@ -11,7 +11,7 @@ import { Button } from "@components/Button";
 import { Link } from "@components/Link";
 import { Paragraph } from "@components/Paragraph";
 import { copyToClipboard } from "@utils/clipboard";
-import { getCurrentChannel, insertTextIntoChatInputBox } from "@utils/discord";
+import { confirmAction, getCurrentChannel, insertTextIntoChatInputBox } from "@utils/discord";
 import definePlugin, { OptionType, PluginNative } from "@utils/types";
 import { Guild } from "@vencord/discord-types";
 import { Menu, SelectedChannelStore, showToast, useEffect, useState } from "@webpack/common";
@@ -54,20 +54,39 @@ function toast(text: string, variant: "default" | "success" | "critical" = "defa
     showToast({ text, variant });
 }
 
-async function deleteUpload(upload: UploadRecord): Promise<boolean> {
+/** Deletes the image from imgur and forgets it. Returns the HTTP status on failure, or null on success. */
+async function removeUpload(upload: UploadRecord): Promise<number | null> {
     const res = await Native.deleteImage(settings.store.clientId.trim(), upload.deletehash);
     // 404 means it is already gone, so forget it either way
-    if (res.status !== 200 && res.status !== 404) {
-        toast(`Could not delete imgur image (HTTP ${res.status})`, "critical");
+    if (res.status !== 200 && res.status !== 404) return res.status;
+    await DataStore.update<UploadRecord[]>(HISTORY_KEY, list => (list ?? []).filter(u => u.deletehash !== upload.deletehash));
+    return null;
+}
+
+async function deleteUpload(upload: UploadRecord): Promise<boolean> {
+    const failedStatus = await removeUpload(upload);
+    if (failedStatus !== null) {
+        toast(`Could not delete imgur image (HTTP ${failedStatus})`, "critical");
         return false;
     }
-    await DataStore.update<UploadRecord[]>(HISTORY_KEY, list => (list ?? []).filter(u => u.deletehash !== upload.deletehash));
     toast("Deleted from imgur", "success");
     return true;
 }
 
+/** Deletes every upload one by one (gentle on imgur's rate limit). Returns the ones that could not be deleted. */
+async function deleteAllUploads(uploads: UploadRecord[]): Promise<UploadRecord[]> {
+    const failed: UploadRecord[] = [];
+    for (const upload of uploads) {
+        if (await removeUpload(upload) !== null) failed.push(upload);
+    }
+    if (failed.length) toast(`Deleted ${uploads.length - failed.length} of ${uploads.length} imgur images, ${failed.length} failed`, "critical");
+    else toast(`Deleted all ${uploads.length} imgur images`, "success");
+    return failed;
+}
+
 function UploadHistory() {
     const [uploads, setUploads] = useState<UploadRecord[] | null>(null);
+    const [deletingAll, setDeletingAll] = useState(false);
     useEffect(() => {
         DataStore.get<UploadRecord[]>(HISTORY_KEY).then(list => setUploads(list ?? []));
     }, []);
@@ -76,7 +95,33 @@ function UploadHistory() {
 
     return (
         <section>
-            <Paragraph weight="semibold">Your uploads ({uploads.length})</Paragraph>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Paragraph weight="semibold">Your uploads ({uploads.length})</Paragraph>
+                {uploads.length > 0 && (
+                    <Button
+                        size="small"
+                        variant="dangerPrimary"
+                        disabled={deletingAll}
+                        onClick={async () => {
+                            const confirmed = await confirmAction({
+                                title: "Delete all imgur uploads?",
+                                subtitle: `This deletes all ${uploads.length} images from imgur. It cannot be undone.`,
+                                confirmText: "Delete all",
+                                variant: "critical-primary"
+                            });
+                            if (!confirmed) return;
+                            setDeletingAll(true);
+                            try {
+                                setUploads(await deleteAllUploads(uploads));
+                            } finally {
+                                setDeletingAll(false);
+                            }
+                        }}
+                    >
+                        {deletingAll ? "Deleting..." : "Delete all"}
+                    </Button>
+                )}
+            </div>
             {!uploads.length && <Paragraph>Nothing uploaded yet.</Paragraph>}
             {[...uploads].reverse().map(u => (
                 <div key={u.deletehash} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>

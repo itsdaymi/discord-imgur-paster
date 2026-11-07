@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm test
+
+  vencord:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: plugin
+      - uses: actions/checkout@v4
+        with:
+          repository: Vendicated/Vencord
+          path: vencord
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: vencord/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: vencord/pnpm-lock.yaml
+      - name: Install Vencord dependencies
+        working-directory: vencord
+        run: pnpm install --frozen-lockfile
+      - name: Add plugin to userplugins
+        run: mkdir -p vencord/src/userplugins && cp -r plugin/imgurPaster vencord/src/userplugins/
+      - name: Typecheck
+        working-directory: vencord
+        run: pnpm test:ts
+      - name: Lint
+        working-directory: vencord
+        run: pnpm lint src/userplugins/imgurPaster
+      - name: Build
+        working-directory: vencord
+        run: pnpm build

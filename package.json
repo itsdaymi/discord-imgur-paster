@@ -1,0 +1,13 @@
+{
+    "name": "discord-imgur-paster",
+    "private": true,
+    "type": "module",
+    "description": "Vencord plugin that uploads pasted images to imgur and pastes the link",
+    "license": "GPL-3.0-or-later",
+    "scripts": {
+        "test": "node --test \"tests/*.test.ts\""
+    },
+    "engines": {
+        "node": ">=22.18"
+    }
+}

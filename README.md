@@ -32,7 +32,7 @@ cd Vencord
 pnpm install --frozen-lockfile
 
 # put the plugin into src/userplugins
-git clone <this repo> ../discord-imgur-paster
+git clone https://github.com/itsdaymi/discord-imgur-paster ../discord-imgur-paster
 mkdir -p src/userplugins
 cp -r ../discord-imgur-paster/imgurPaster src/userplugins/
 

@@ -23,6 +23,17 @@ export interface ImgurImage {
     deletehash: string;
 }
 
+/**
+ * The Client ID imgur.com's own web uploader uses (from the `apiClientId` in its main JS bundle).
+ * imgur stopped accepting new API app registrations, so this is the fallback when the user has none.
+ * imgur can rotate it at any time; a user-supplied Client ID always takes precedence.
+ */
+export const IMGUR_WEB_CLIENT_ID = "d70305e7c3ac5c6";
+
+export function resolveClientId(setting: string): string {
+    return setting.trim() || IMGUR_WEB_CLIENT_ID;
+}
+
 export function formatLink(image: ImgurImage, format: LinkFormat): string {
     return format === "direct" ? image.link : `https://imgur.com/${image.id}`;
 }

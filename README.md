@@ -8,7 +8,7 @@ A [Vencord](https://vencord.dev) plugin for servers that only allow images as im
 - **Per-server auto mode:** right click a server → **Imgur Paster** → **Upload pasted images to imgur**. In that server a plain Ctrl+V of an image goes to imgur as well.
 - **Link format:** pick the default in the plugin settings (`imgur.com/abc` page link or `i.imgur.com/abc.png` direct link). You can override it per server from the same right-click menu.
 - **No accidental raw posts:** once the plugin decides to handle a paste, the image is never attached to Discord, even if the upload fails. You get an error toast instead.
-- **Delete later:** every upload is listed in the plugin settings with a **Delete** button, using the deletehash imgur hands out for anonymous uploads. The list is stored locally only.
+- **Delete later:** every upload is listed in the plugin settings with a **Delete** button, plus **Delete all**. This uses the deletehash imgur hands out for anonymous uploads. The list is stored locally only.
 
 If you switch channels while an upload is running, the link is copied to your clipboard instead of being pasted into the wrong chat.
 
